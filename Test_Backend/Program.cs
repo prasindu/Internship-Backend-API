@@ -35,6 +35,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Repositories
+builder.Services.AddScoped<Test_Backend.Repositories.ICustomerRepository, Test_Backend.Repositories.CustomerRepository>();
+builder.Services.AddScoped<Test_Backend.Repositories.IAuthRepository, Test_Backend.Repositories.AuthRepository>();
+
+// Services
+builder.Services.AddScoped<Test_Backend.Services.ICustomerService, Test_Backend.Services.CustomerService>();
+builder.Services.AddScoped<Test_Backend.Services.IAuthService, Test_Backend.Services.AuthService>();
 
 builder.Services.AddControllers();
 

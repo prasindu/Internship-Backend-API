@@ -1,12 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Test_Backend.Data;
-using Test_Backend.Model;
+﻿using Microsoft.AspNetCore.Mvc;
+using Test_Backend.Services;
 using test01.Dto;
 
 namespace Test_Backend.Controllers
@@ -15,64 +8,37 @@ namespace Test_Backend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly AppDbContex _Contex;
-        private readonly IConfiguration _config;
-        public AuthController(AppDbContex contex, IConfiguration config)
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
         {
-            _Contex = contex;
-            _config = config;
+            _authService = authService;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterUserDto dto)
         {
-            var userexit = await _Contex.users.AnyAsync(u => u.Email == dto.Email);
-            if (userexit)
-            {
-                return BadRequest("email already add");
-            }
-            var newUser = new User
-            {
-                Name = dto.Name,
-                Email = dto.Email,
-                Password = dto.Password
-            };
+            var errorMessage = await _authService.RegisterAsync(dto);
 
-            _Contex.Add(newUser);
-            await _Contex.SaveChangesAsync();
-            return Ok(new { massage = "registration succussfull" });
+            if (errorMessage != null)
+            {
+                return BadRequest(errorMessage);
+            }
+
+            return Ok(new { massage = "registration successful" });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDto dto)
         {
-            var user = await _Contex.users.FirstOrDefaultAsync(u => u.Email == dto.Email && u.Password == dto.Password);
-            if (user == null)
+            var response = await _authService.LoginAsync(dto);
+
+            if (response == null)
             {
                 return Unauthorized("invalid email or password");
             }
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Email, user.Email)
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: credentials);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            
-            return Ok(new { token = jwt, massage = "login succesfull", name = user.Name });
+            return Ok(new { token = response.Token, massage = response.Message, name = response.Name });
         }
     }
 }
