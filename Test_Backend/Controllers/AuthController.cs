@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Test_Backend.Data;
 using Test_Backend.Model;
 using test01.Dto;
@@ -12,11 +16,12 @@ namespace Test_Backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContex _Contex;
-        public AuthController(AppDbContex contex)
+        private readonly IConfiguration _config;
+        public AuthController(AppDbContex contex, IConfiguration config)
         {
             _Contex = contex;
+            _config = config;
         }
-
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterUserDto dto)
@@ -47,7 +52,27 @@ namespace Test_Backend.Controllers
                 return Unauthorized("invalid email or password");
             }
 
-            return Ok(new { massage = "login succesfull", name = user.Name });
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.Email, user.Email)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: credentials);
+
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            
+            return Ok(new { token = jwt, massage = "login succesfull", name = user.Name });
         }
     }
 }
