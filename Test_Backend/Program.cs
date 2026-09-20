@@ -42,6 +42,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.UseMiddleware<Test_Backend.Middlewares.GlobalExceptionMiddleware>();
 
 
 if (app.Environment.IsDevelopment())
