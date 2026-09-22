@@ -7,7 +7,10 @@ namespace Test_Backend.Repositories
     public class CustomerRepository:ICustomerRepository
     {
         private readonly AppDbContex _context;
-        public CustomerRepository(AppDbContex context) { _context = context; }
+        public CustomerRepository(AppDbContex context) 
+        { 
+            _context = context; 
+        }
 
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync() => await _context.customers.ToListAsync();
         public async Task<Customer> GetCustomerByIdAsync(int id) => await _context.customers.FindAsync(id);

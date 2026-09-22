@@ -1,15 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace test01.Dto
+namespace Test_Backend.Dto
 {
     public class RegisterUserDto
     {
-        [Required (ErrorMessage =" name is reqired")]
+        [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; }
+
         [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "enter correct email")]
+        [EmailAddress(ErrorMessage = "Enter a correct email")]
         public string Email { get; set; }
-        [Required(ErrorMessage ="enter password")]
+
+        [Required(ErrorMessage = "Enter password")]
         [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; }
     }
